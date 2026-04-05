@@ -4,6 +4,11 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '../generated/prisma/client';
 import { envConfig } from '../config';
 
+  interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+}
+
 @Injectable()
 export class PrismaService extends PrismaClient {
 
@@ -15,4 +20,34 @@ export class PrismaService extends PrismaClient {
 
     this.logger.log('PrismaService initialized');
   }
+
+  async findManyPaginated(
+    model: any,
+    args: any,
+    { page = 1, pageSize = 10 }: PaginationParams
+  ) {
+    const skip = (page - 1) * pageSize;
+
+    const [data, total] = await Promise.all([
+      model.findMany({
+        ...args,
+        skip,
+        take: pageSize,
+      }),
+      model.count({
+        where: args.where,
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
 }
+

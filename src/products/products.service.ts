@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginationDto } from '../common';
+import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
@@ -9,7 +11,6 @@ export class ProductsService {
 constructor(private prisma: PrismaService) {}
 
   async create(createProductDto: CreateProductDto) {
-console.log(createProductDto);
     const product = await this.prisma.product.create({
       data: {
         name: createProductDto.name,
@@ -19,12 +20,19 @@ console.log(createProductDto);
     return product;
   }
 
-  findAll() {
-    return `This action returns all products`;
+  async findAll(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    return this.prisma.findManyPaginated(this.prisma.product, {} ,{
+      page: page || 1,
+      pageSize: limit || 10,
+    });
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} product`;
+    return this.prisma.product.findUnique({
+      where: { id },
+    });
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {
