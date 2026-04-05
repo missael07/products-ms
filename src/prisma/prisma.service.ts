@@ -28,6 +28,7 @@ export class PrismaService extends PrismaClient {
   ) {
     const skip = (page - 1) * pageSize;
 
+    console.log('Pagination Params:', { page, pageSize, skip }, args);
     const [data, total] = await Promise.all([
       model.findMany({
         ...args,

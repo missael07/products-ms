@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common';
-import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
@@ -23,23 +22,54 @@ constructor(private prisma: PrismaService) {}
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
 
-    return this.prisma.findManyPaginated(this.prisma.product, {} ,{
+    return this.prisma.findManyPaginated(this.prisma.product, {
+      where: { available: true },
+    } ,{
       page: page || 1,
       pageSize: limit || 10,
     });
   }
 
-  findOne(id: number) {
-    return this.prisma.product.findUnique({
+  async findOne(id: number) {
+
+    const product = await this.prisma.product.findUnique({
+      where: { id, available: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with id ${id} not found`);
+    }
+
+    return product;
+
+  }
+
+  async update(id: number, updateProductDto: UpdateProductDto) {
+
+    const { name, price } = updateProductDto;
+    const product = await this.findOne(id);
+
+    return this.prisma.product.update({
       where: { id },
+      data: {
+        name: name ?? product.name,
+        price: price ?? product.price,
+        updatedAt: new Date(),
+      },
     });
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
-  }
+  async remove(id: number) {
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+    await this.findOne(id);
+
+    return this.prisma.product.update({
+      where: { id },
+      data: {
+        available: false,
+        updatedAt: new Date(),
+      },
+    });
+
   }
 }
