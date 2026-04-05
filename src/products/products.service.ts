@@ -46,7 +46,7 @@ constructor(private prisma: PrismaService) {}
 
   async update(id: number, updateProductDto: UpdateProductDto) {
 
-    const { name, price } = updateProductDto;
+    const { id:__, name, price } = updateProductDto;
     const product = await this.findOne(id);
 
     return this.prisma.product.update({
